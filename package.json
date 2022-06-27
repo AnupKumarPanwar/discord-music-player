@@ -45,7 +45,7 @@
     "htmlparser2": "^8.0.1",
     "jest": "^28.1.1",
     "libsodium-wrappers": "^0.7.9",
-    "soundcloud-scraper": "file:soundcloud-scraper",
+    "soundcloud-scraper": "github:AnupKumarPanwar/soundcloud-scraper",
     "spotify-url-info": "^3.1.2",
     "youtubei": "^0.0.1-rc.34",
     "ytdl-core": "^4.9.1",
