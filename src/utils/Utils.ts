@@ -6,10 +6,15 @@ import {
 } from "..";
 import { User } from "discord.js";
 import YTSR, { Video } from 'ytsr';
-import {getData, getPreview } from "spotify-url-info";
+
+const { getData, getPreview, getTracks, getDetails } = require('spotify-url-info')(fetch)
+
 import { getSong, getPlaylist } from "./AppleUtils";
 import {Client, Video as IVideo, VideoCompact, Playlist as IPlaylist} from "youtubei";
 let YouTube = new Client();
+
+import { Client as SoundCloudScraperClient } from "soundcloud-scraper";
+
 
 export class Utils {
     /**
@@ -26,6 +31,7 @@ export class Utils {
         SpotifyPlaylist: /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:(album|playlist)\/|\?uri=spotify:playlist:)((\w|-)+)(?:(?=\?)(?:[?&]foo=(\d*)(?=[&#]|$)|(?![?&]foo=)[^#])+)?(?=#|$)/,
         Apple: /https?:\/\/music\.apple\.com\/.+?\/.+?\/(.+?)\//,
         ApplePlaylist: /https?:\/\/music\.apple\.com\/.+?\/.+?\/(.+?)\//,
+        SoundCloudPlaylist: /https?:\/\/soundcloud\.com\/.*/
     }
 
     /**
@@ -254,6 +260,8 @@ export class Utils {
             this.regexList.YouTubePlaylist.test(Search);
         let ApplePlaylistLink =
             this.regexList.ApplePlaylist.test(Search);
+        let SoundCloudPlaylistLink = this.regexList.SoundCloudPlaylist.test(Search);
+
 
         if (ApplePlaylistLink) {
 
@@ -295,7 +303,46 @@ export class Utils {
                 AppleResult.songs = this.shuffle(AppleResult.songs);
 
             return new Playlist(AppleResult, Queue, SOptions.requestedBy);
-        } else if(SpotifyPlaylistLink) {
+        } else if (SoundCloudPlaylistLink) {
+            let SoundCloudResultData = await new SoundCloudScraperClient()
+              .getPlaylist(Search)
+              .catch(() => null);
+            if (!SoundCloudResultData) throw DMPErrors.INVALID_PLAYLIST;
+      
+            let SoundCloudResult: RawPlaylist = {
+              name: SoundCloudResultData.title,
+              author: SoundCloudResultData.author.name,
+              url: Search,
+              songs: [],
+              type: "playlist",
+            };
+      
+            SoundCloudResult.songs = (
+              await Promise.all(
+                (SoundCloudResultData.tracks ?? []).map(
+                  async (track: any, index: number) => {
+                    if (Limit !== -1 && index >= Limit) return null;
+                    const Result = await this.search(
+                      `${track.title}`,
+                      SOptions,
+                      Queue
+                    ).catch(() => null);
+                    if (Result) {
+                      Result[0].data = SOptions.data;
+                      return Result[0];
+                    } else return null;
+                  }
+                )
+              )
+            ).filter((V): V is Song => V !== null);
+      
+            if (SoundCloudResult.songs.length === 0) throw DMPErrors.INVALID_PLAYLIST;
+      
+            if (SOptions.shuffle)
+              SoundCloudResult.songs = this.shuffle(SoundCloudResult.songs);
+      
+            return new Playlist(SoundCloudResult, Queue, SOptions.requestedBy);
+          }else if(SpotifyPlaylistLink) {
             let SpotifyResultData = await getData(Search).catch(() => null);
             if(!SpotifyResultData || !['playlist', 'album'].includes(SpotifyResultData.type))
                 throw DMPErrors.INVALID_PLAYLIST;

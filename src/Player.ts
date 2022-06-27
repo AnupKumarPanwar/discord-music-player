@@ -40,7 +40,7 @@ export class Player extends EventEmitter {
          */
         this.queues = new Collection<Snowflake, Queue>();
 
-        this.client.on('voiceStateUpdate',
+        this.client.on<'voiceStateUpdate'>('voiceStateUpdate',
             (oldState, newState) =>
                 this._voiceUpdate(oldState, newState)
         );

@@ -57,7 +57,7 @@ export class StreamConnection extends EventEmitter {
          */
         this.channel = channel;
 
-        this.connection.on('stateChange', async (oldState, newState) => {
+        this.connection.on<"stateChange">('stateChange', async (oldState, newState) => {
             if (newState.status === VoiceConnectionStatus.Disconnected) {
                 if (newState.reason === VoiceConnectionDisconnectReason.WebSocketClose && newState.closeCode === 4014) {
                     try {
@@ -90,7 +90,7 @@ export class StreamConnection extends EventEmitter {
         });
 
         this.player
-            .on('stateChange', (oldState, newState) => {
+            .on<"stateChange">('stateChange', (oldState, newState) => {
                 if (newState.status === AudioPlayerStatus.Idle && oldState.status !== AudioPlayerStatus.Idle) {
                     if (!this.paused) {
                         this.emit('end', this.resource);
