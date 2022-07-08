@@ -159,6 +159,10 @@ export class Utils {
         let AppleLink =
             this.regexList.Apple.test(Search);
 
+        console.log("SpotifyLink", SpotifyLink);
+        console.log("YouTubeLink", YouTubeLink);
+        console.log("AppleLink", AppleLink);
+
         if (AppleLink) {
             try {
                 let AppleResult = await getSong(Search);
@@ -175,6 +179,8 @@ export class Utils {
         } else if(SpotifyLink) {
             try {
                 let SpotifyResult = await getPreview(Search);
+                console.log("SpotifyResult");
+                console.log(SpotifyResult);
                 let SearchResult = await this.search(
                     `${SpotifyResult.artist} - ${SpotifyResult.title}`,
                     SOptions,
@@ -219,6 +225,7 @@ export class Utils {
     static async best(Search: Song|string, SOptions: PlayOptions = DefaultPlayOptions, Queue: Queue): Promise<Song> {
         let _Song;
 
+        console.log("Search", Search);
         if(Search instanceof Song)
             return Search as Song;
 
@@ -231,6 +238,8 @@ export class Utils {
                 throw DMPErrors.UNKNOWN //Ignore typeError
             }
         });
+
+        console.log("_Song", _Song);
 
         if(!_Song)
             _Song = (await this.search(
@@ -304,10 +313,21 @@ export class Utils {
 
             return new Playlist(AppleResult, Queue, SOptions.requestedBy);
         } else if (SoundCloudPlaylistLink) {
+
+            let SoundCloudResultInfo = await new SoundCloudScraperClient()
+              .getSongInfo("https://soundcloud.com/atif-aslam-116789906/sajan-das-na-atif-aslam-momina-mustehsan-coke-studio-14")
+              .catch(() => null);
+
+              console.log("SoundCloudResultInfo", SoundCloudResultInfo);
+
+
             let SoundCloudResultData = await new SoundCloudScraperClient()
               .getPlaylist(Search)
               .catch(() => null);
             if (!SoundCloudResultData) throw DMPErrors.INVALID_PLAYLIST;
+
+
+            
       
             let SoundCloudResult: RawPlaylist = {
               name: SoundCloudResultData.title,
@@ -437,9 +457,7 @@ export class Utils {
     }
 
     static async playlistFile(Search: string[], Name: string, Description: string, Image: string, SOptions: PlaylistOptions & { data?: any } = DefaultPlaylistOptions, Queue: Queue): Promise<Playlist> {
-        if(Search instanceof Playlist)
-            return Search as Playlist;
-
+        
         let Limit = SOptions.maxSongs ?? -1;
        
           let FileResult: RawPlaylist = {

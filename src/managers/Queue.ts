@@ -218,6 +218,7 @@ export class Queue {
         if(song.seekTime)
             options.seek = song.seekTime;
 
+        console.log(song.url);
         let stream = ytdl(song.url, {
             requestOptions: this.player.options.ytdlRequestOptions ?? {},
             opusEncoded: false,
@@ -282,6 +283,36 @@ export class Queue {
 
         return playlist;
     }
+
+
+    async playlistFile(search: string[], name: string, description: string, image: string, options: PlaylistOptions & { data?: any } = DefaultPlaylistOptions): Promise<Playlist> {
+        if(this.destroyed)
+            throw new DMPError(DMPErrors.QUEUE_DESTROYED);
+        if(!this.connection)
+            throw new DMPError(DMPErrors.NO_VOICE_CONNECTION);
+        options = Object.assign(
+            {} as PlaylistOptions & { data?: any },
+            DefaultPlaylistOptions,
+            options
+        );
+        let playlist = await Utils.playlistFile(search, name, description, image, options, this)
+            .catch(error => {
+                throw new DMPError(error);
+            });
+        let songLength = this.songs.length;
+        if(options?.index! >= 0 && ++options.index! <= songLength)
+            this.songs.splice(options.index!, 0, ...playlist.songs);
+        else this.songs.push(...playlist.songs);
+        this.player.emit('playlistAdd', this, playlist);
+
+        if(songLength === 0) {
+            playlist.songs[0]._setFirst();
+            await this.play(playlist.songs[0], { immediate: true });
+        }
+
+        return playlist;
+    }
+
 
     /**
      * Seeks the current playing Song
