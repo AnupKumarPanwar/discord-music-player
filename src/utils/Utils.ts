@@ -321,8 +321,8 @@ export class Utils {
               await Promise.all(
                 (SoundCloudResultData.tracks ?? []).map(
                   async (track: any, index: number) => {
-                    if (Limit !== -1 && index >= Limit) return null;
-                    const Result = await this.search(
+                      if (Limit !== -1 && index >= Limit) return null;
+                      const Result = await this.search(
                       `${track.title}`,
                       SOptions,
                       Queue
@@ -432,6 +432,69 @@ export class Utils {
 
             return new Playlist(YouTubeResult, Queue, SOptions.requestedBy);
         }
+
+        throw DMPErrors.INVALID_PLAYLIST;
+    }
+
+    static async playlistFile(Search: string[], Name: string, Description: string, Image: string, SOptions: PlaylistOptions & { data?: any } = DefaultPlaylistOptions, Queue: Queue): Promise<Playlist> {
+        if(Search instanceof Playlist)
+            return Search as Playlist;
+
+        let Limit = SOptions.maxSongs ?? -1;
+       
+          let FileResult: RawPlaylist = {
+            name: Name,
+            author: '',
+            url: '',
+            songs: [],
+            type: "playlist",
+          };
+    
+          FileResult.songs = (
+            await Promise.all(
+              (Search).map(
+                async (track: any, index: number) => {
+                  if (Limit !== -1 && index >= Limit) return null;
+                  const Result = await this.search(
+                    `${Name}`,
+                    SOptions,
+                    Queue
+                  ).catch(() => null);
+                  if (Result) {
+                    Result[0].data = SOptions.data;
+                    return Result[0];
+                  } else return null;
+                }
+              )
+            )
+          ).filter((V): V is Song => V !== null);
+
+
+          FileResult.songs = Search.map((track: any, index: number) => {
+            if (Limit !== -1 && index >= Limit)
+                return null;
+            let song = new Song({
+                name: Name,
+                url: track,
+                duration: '0',
+                author: '',
+                isLive: false,
+                thumbnail: Image,
+            }, Queue, SOptions.requestedBy);
+            song.data = SOptions.data;
+            return song;
+        })
+            .filter((V): V is Song => V !== null);
+
+
+    
+          if (FileResult.songs.length === 0) throw DMPErrors.INVALID_PLAYLIST;
+    
+          if (SOptions.shuffle)
+            FileResult.songs = this.shuffle(FileResult.songs);
+    
+          return new Playlist(FileResult, Queue, SOptions.requestedBy);
+       
 
         throw DMPErrors.INVALID_PLAYLIST;
     }
