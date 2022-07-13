@@ -1,4 +1,4 @@
-import {Guild, GuildChannelResolvable, Snowflake, StageChannel, VoiceChannel} from "discord.js";
+import {Guild, GuildChannelResolvable, Snowflake, StageChannel, Util, VoiceChannel} from "discord.js";
 import {StreamConnection} from "../voice/StreamConnection";
 import {AudioResource,
     createAudioResource,
@@ -29,59 +29,73 @@ export class Queue {
          * Player instance
          * @name Queue#player
          * @type {Player}
+
          * @readonly
+
          */
 
         /**
          * Guild instance
          * @name Queue#guild
          * @type {Guild}
+
          * @readonly
+
          */
 
         /**
          * Queue connection
          * @name Queue#connection
          * @type {?StreamConnection}
+
          * @readonly
+
          */
 
         /**
          * Queue songs
          * @name Queue#songs
          * @type {Song[]}
+
          */
 
         /**
          * If Song is playing on the Queue
          * @name Queue#isPlaying
          * @type {boolean}
+
          * @readonly
+
          */
 
         /**
          * Queue custom data
          * @name Queue#data
          * @type {any}
+
          */
 
         /**
          * Queue options
          * @name Queue#options
          * @type {PlayerOptions}
+
          */
 
         /**
          * Queue repeat mode
          * @name Queue#repeatMode
          * @type {RepeatMode}
+
          */
 
         /**
          * If the queue is destroyed
          * @name Queue#destroyed
          * @type {boolean}
+
          * @readonly
+
          */
 
         this.player = player;
@@ -95,6 +109,7 @@ export class Queue {
      * Joins a voice channel
      * @param {GuildChannelResolvable} _channel
      * @returns {Promise<Queue>}
+
      */
     async join(channelId: GuildChannelResolvable) {
         if(this.destroyed)
@@ -177,6 +192,7 @@ export class Queue {
      * @param {Song | string} search
      * @param {PlayOptions} [options=DefaultPlayOptions]
      * @returns {Promise<Song>}
+
      */
     async play(search: Song | string, options: PlayOptions & { immediate?: boolean, seek?: number, data?: any } = DefaultPlayOptions): Promise<Song> {
         if(this.destroyed)
@@ -218,29 +234,39 @@ export class Queue {
         if(song.seekTime)
             options.seek = song.seekTime;
 
-        console.log(song.url);
-        let stream = ytdl(song.url, {
-            requestOptions: this.player.options.ytdlRequestOptions ?? {},
-            opusEncoded: false,
-            seek: options.seek ? options.seek / 1000 : 0,
-            fmt: 's16le',
-            encoderArgs: [],
-            quality: quality!.toLowerCase() === 'low' ? 'lowestaudio' : 'highestaudio',
-            highWaterMark: 1 << 25,
-            filter: 'audioonly'
-        })
-            .on('error', (error: { message: string; }) => {
-                if(!/Status code|premature close/i.test(error.message))
-                    this.player.emit('error', error.message === 'Video unavailable' ? 'VideoUnavailable' : error.message, this);
-               return;
-            });
+            let resource: AudioResource<Song>;
+            
+        if(Utils.audioTypes.some(x=>song.url.includes(x)))
+        {
+            resource  = this.connection.createAudioStream(song.url, {
+                metadata: song,
+                inputType: StreamType.Arbitrary // Opus
+                });
+        }
+        else{ 
+        let stream  = ytdl(song.url, {
+                requestOptions: this.player.options.ytdlRequestOptions ?? {},
+                opusEncoded: false,
+                seek: options.seek ? options.seek / 1000 : 0,
+                fmt: 's16le',
+                encoderArgs: [],
+                quality: quality!.toLowerCase() === 'low' ? 'lowestaudio' : 'highestaudio',
+                highWaterMark: 1 << 25,
+                filter: 'audioonly'
+                })
+                .on('error', (error: { message: string; }) => {
+                    if(!/Status code|premature close/i.test(error.message))
+                        this.player.emit('error', error.message === 'Video unavailable' ? 'VideoUnavailable' : error.message, this);
+                return;
+                });
 
-        const resource: AudioResource<Song> = this.connection.createAudioStream(stream, {
-           metadata: song,
-           inputType: StreamType.Raw
-        });
+                resource  = this.connection.createAudioStream(stream, {
+                    metadata: song,
+                    inputType: StreamType.Raw
+                    });
+            }
 
-        setTimeout(_ => {
+        setTimeout((_:any) => {
             this.connection!.playAudioStream(resource)
                 .then(__ => {
                     this.setVolume(this.options.volume!);
@@ -255,6 +281,7 @@ export class Queue {
      * @param {Playlist | string} search
      * @param {PlaylistOptions} [options=DefaultPlaylistOptions]
      * @returns {Promise<Playlist>}
+
      */
     async playlist(search: Playlist | string, options: PlaylistOptions & { data?: any } = DefaultPlaylistOptions): Promise<Playlist> {
         if(this.destroyed)
@@ -284,40 +311,11 @@ export class Queue {
         return playlist;
     }
 
-
-    async playlistFile(search: string[], name: string, description: string, image: string, options: PlaylistOptions & { data?: any } = DefaultPlaylistOptions): Promise<Playlist> {
-        if(this.destroyed)
-            throw new DMPError(DMPErrors.QUEUE_DESTROYED);
-        if(!this.connection)
-            throw new DMPError(DMPErrors.NO_VOICE_CONNECTION);
-        options = Object.assign(
-            {} as PlaylistOptions & { data?: any },
-            DefaultPlaylistOptions,
-            options
-        );
-        let playlist = await Utils.playlistFile(search, name, description, image, options, this)
-            .catch(error => {
-                throw new DMPError(error);
-            });
-        let songLength = this.songs.length;
-        if(options?.index! >= 0 && ++options.index! <= songLength)
-            this.songs.splice(options.index!, 0, ...playlist.songs);
-        else this.songs.push(...playlist.songs);
-        this.player.emit('playlistAdd', this, playlist);
-
-        if(songLength === 0) {
-            playlist.songs[0]._setFirst();
-            await this.play(playlist.songs[0], { immediate: true });
-        }
-
-        return playlist;
-    }
-
-
     /**
      * Seeks the current playing Song
      * @param {number} time
      * @returns {boolean}
+
      */
     async seek(time: number) {
         if(this.destroyed)
@@ -344,6 +342,7 @@ export class Queue {
      * Skips the current playing Song and returns it
      * @param {number} [index=0]
      * @returns {Song}
+
      */
     skip(index: number = 0): Song {
         if(this.destroyed)
@@ -360,6 +359,7 @@ export class Queue {
     /**
      * Stops playing the Music and cleans the Queue
      * @returns {void}
+
      */
     stop(): void {
         if(this.destroyed)
@@ -378,6 +378,7 @@ export class Queue {
     /**
      * Shuffles the Queue
      * @returns {Song[]}
+
      */
     shuffle(): Song[]|undefined {
         if(this.destroyed)
@@ -394,6 +395,7 @@ export class Queue {
      * Pause/resume the current Song
      * @param {boolean} [state=true] Pause state, if none it will pause the Song
      * @returns {boolean}
+
      */
     setPaused(state: boolean = true): boolean|undefined {
         if(this.destroyed)
@@ -410,6 +412,7 @@ export class Queue {
      * Remove a Song from the Queue
      * @param {number} index
      * @returns {Song|undefined}
+
      */
     remove(index: number): Song|undefined {
         if(this.destroyed)
@@ -421,6 +424,7 @@ export class Queue {
     /**
      * Gets the current volume
      * @type {number}
+
      */
     get volume(): number {
         if (!this.connection)
@@ -431,6 +435,7 @@ export class Queue {
     /**
      * Gets the paused state of the player
      * @type {boolean}
+
      */
     get paused(): boolean {
         if(this.destroyed)
@@ -447,6 +452,7 @@ export class Queue {
      * Sets the current volume
      * @param {number} volume
      * @returns {boolean}
+
      */
     setVolume(volume: number) {
         if(this.destroyed)
@@ -461,6 +467,7 @@ export class Queue {
     /**
      * Returns current playing song
      * @type {?Song}
+
      */
     get nowPlaying(): Song | undefined {
         return this.connection?.resource?.metadata ?? this.songs[0];
@@ -469,6 +476,7 @@ export class Queue {
     /**
      * Clears the Queue
      * @returns {void}
+
      */
     clearQueue() {
         if(this.destroyed)
@@ -482,6 +490,7 @@ export class Queue {
      * Sets Queue repeat mode
      * @param {RepeatMode} repeatMode
      * @returns {boolean}
+
      */
     setRepeatMode(repeatMode: RepeatMode): boolean {
         if(this.destroyed)
@@ -499,6 +508,7 @@ export class Queue {
      * Creates Progress Bar class
      * @param {ProgressBarOptions} [options]
      * @returns {ProgressBar}
+
      */
     createProgressBar(options?: ProgressBarOptions): ProgressBar {
         if(this.destroyed)
@@ -513,6 +523,7 @@ export class Queue {
      * Set's custom queue data
      * @param {any} data
      * @returns {void}
+
      */
     setData(data: any): void {
         if(this.destroyed)
@@ -524,6 +535,7 @@ export class Queue {
     /**
      * Disconnects the player
      * @returns {void}
+
      */
     leave(): void {
         this.destroyed = true;
