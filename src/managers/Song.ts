@@ -1,5 +1,5 @@
-import { User } from 'discord.js';
-import { Player, Queue, RawSong, Utils } from '..';
+import { User } from "discord.js";
+import { Player, Queue, RawSong, Utils } from "..";
 
 export class Song {
     public player: Player;
@@ -22,7 +22,6 @@ export class Song {
      * @param {User} [requestedBy]
      */
     constructor(raw: RawSong, queue: Queue, requestedBy?: User) {
-
         /**
          * Player instance
          * @name Song#player
@@ -120,7 +119,7 @@ export class Song {
 
         this.seekTime = raw.seekTime ?? 0;
 
-        this.data = null;
+        this.data = raw.data || null;
     }
 
     /**

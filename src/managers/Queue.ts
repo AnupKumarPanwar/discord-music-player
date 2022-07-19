@@ -1,4 +1,4 @@
-import {Guild, GuildChannelResolvable, Snowflake, StageChannel, VoiceChannel} from "discord.js";
+import {Guild, GuildChannelResolvable, Snowflake, StageChannel, Util, VoiceChannel} from "discord.js";
 import {StreamConnection} from "../voice/StreamConnection";
 import {AudioResource,
     createAudioResource,
@@ -194,8 +194,9 @@ export class Queue {
             .catch(error => {
                 throw new DMPError(error);
             });
-        if(!options.immediate)
-            song.data = data;
+   
+        // if(!options.immediate)
+        //     song.data = data;
 
         let songLength = this.songs.length;
         if(!options?.immediate && songLength !== 0) {
@@ -214,33 +215,44 @@ export class Queue {
             this.songs[0].seekTime = options.seek;
 
         let quality = this.options.quality;
-        song = this.songs[0];
+        // console.log("selected song",song)
+        // song = song || this.songs[0];
         if(song.seekTime)
             options.seek = song.seekTime;
 
-        console.log(song.url);
-        let stream = ytdl(song.url, {
-            requestOptions: this.player.options.ytdlRequestOptions ?? {},
-            opusEncoded: false,
-            seek: options.seek ? options.seek / 1000 : 0,
-            fmt: 's16le',
-            encoderArgs: [],
-            quality: quality!.toLowerCase() === 'low' ? 'lowestaudio' : 'highestaudio',
-            highWaterMark: 1 << 25,
-            filter: 'audioonly'
-        })
-            .on('error', (error: { message: string; }) => {
-                if(!/Status code|premature close/i.test(error.message))
-                    this.player.emit('error', error.message === 'Video unavailable' ? 'VideoUnavailable' : error.message, this);
-               return;
-            });
+            let resource: AudioResource<Song>;
+            
+        if(Utils.audioTypes.some(x=>song.url.includes(x)))
+        {
+            resource  = this.connection.createAudioStream(song.url, {
+                metadata: song,
+                inputType: StreamType.Arbitrary // Opus
+                });
+        }
+        else{ 
+        let stream  = ytdl(song.url, {
+                requestOptions: this.player.options.ytdlRequestOptions ?? {},
+                opusEncoded: false,
+                seek: options.seek ? options.seek / 1000 : 0,
+                fmt: 's16le',
+                encoderArgs: [],
+                quality: quality!.toLowerCase() === 'low' ? 'lowestaudio' : 'highestaudio',
+                highWaterMark: 1 << 25,
+                filter: 'audioonly'
+                })
+                .on('error', (error: { message: string; }) => {
+                    if(!/Status code|premature close/i.test(error.message))
+                        this.player.emit('error', error.message === 'Video unavailable' ? 'VideoUnavailable' : error.message, this);
+                return;
+                });
 
-        const resource: AudioResource<Song> = this.connection.createAudioStream(stream, {
-           metadata: song,
-           inputType: StreamType.Raw
-        });
+                resource  = this.connection.createAudioStream(stream, {
+                    metadata: song,
+                    inputType: StreamType.Raw
+                    });
+            }
 
-        setTimeout(_ => {
+        setTimeout((_:any) => {
             this.connection!.playAudioStream(resource)
                 .then(__ => {
                     this.setVolume(this.options.volume!);
@@ -283,36 +295,6 @@ export class Queue {
 
         return playlist;
     }
-
-
-    async playlistFile(search: string[], name: string, description: string, image: string, options: PlaylistOptions & { data?: any } = DefaultPlaylistOptions): Promise<Playlist> {
-        if(this.destroyed)
-            throw new DMPError(DMPErrors.QUEUE_DESTROYED);
-        if(!this.connection)
-            throw new DMPError(DMPErrors.NO_VOICE_CONNECTION);
-        options = Object.assign(
-            {} as PlaylistOptions & { data?: any },
-            DefaultPlaylistOptions,
-            options
-        );
-        let playlist = await Utils.playlistFile(search, name, description, image, options, this)
-            .catch(error => {
-                throw new DMPError(error);
-            });
-        let songLength = this.songs.length;
-        if(options?.index! >= 0 && ++options.index! <= songLength)
-            this.songs.splice(options.index!, 0, ...playlist.songs);
-        else this.songs.push(...playlist.songs);
-        this.player.emit('playlistAdd', this, playlist);
-
-        if(songLength === 0) {
-            playlist.songs[0]._setFirst();
-            await this.play(playlist.songs[0], { immediate: true });
-        }
-
-        return playlist;
-    }
-
 
     /**
      * Seeks the current playing Song

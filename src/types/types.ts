@@ -1,5 +1,5 @@
-import {AudioPlayerError, AudioResource } from "@discordjs/voice";
-import {User} from "discord.js";
+import { AudioPlayerError, AudioResource } from "@discordjs/voice";
+import { User } from "discord.js";
 import { Song, Queue, Playlist } from "..";
 
 /**
@@ -16,15 +16,15 @@ import { Song, Queue, Playlist } from "..";
  * @param {string} [ytdlRequestOptions] Custom YTDL Request Options object
  */
 export interface PlayerOptions {
-    leaveOnEnd?: boolean,
-    leaveOnStop?: boolean,
-    leaveOnEmpty?: boolean,
-    deafenOnJoin?: boolean,
-    timeout?: number,
-    volume?: number,
-    quality?: 'low'|'high',
-    localAddress?: string,
-    ytdlRequestOptions?: object,
+    leaveOnEnd?: boolean;
+    leaveOnStop?: boolean;
+    leaveOnEmpty?: boolean;
+    deafenOnJoin?: boolean;
+    timeout?: number;
+    volume?: number;
+    quality?: "low" | "high";
+    localAddress?: string;
+    ytdlRequestOptions?: object;
 }
 
 /**
@@ -39,14 +39,14 @@ export interface PlayerOptions {
  * @param {string} [localAddress] Custom ipv4/ipv6 address
  */
 export interface PlayOptions {
-    uploadDate?: 'hour'|'today'|'week'|'month'|'year',
-    duration?: 'short'|'long',
-    sortBy?: 'relevance'|'date'|'view count'|'rating',
-    timecode?: boolean,
+    uploadDate?: "hour" | "today" | "week" | "month" | "year";
+    duration?: "short" | "long";
+    sortBy?: "relevance" | "date" | "view count" | "rating";
+    timecode?: boolean;
     index?: number;
-    requestedBy?: User,
-    localAddress?: string
-};
+    requestedBy?: User;
+    localAddress?: string;
+}
 
 /**
  * Playlist options
@@ -58,12 +58,12 @@ export interface PlayOptions {
  * @param {string} [localAddress] Custom ipv4/ipv6 address
  */
 export interface PlaylistOptions {
-    maxSongs?: number,
-    requestedBy?: User,
-    shuffle?: boolean,
-    index?: number,
-    localAddress?: string
-};
+    maxSongs?: number;
+    requestedBy?: User;
+    shuffle?: boolean;
+    index?: number;
+    localAddress?: string;
+}
 
 /**
  * @typedef {object} ProgressBarOptions
@@ -97,7 +97,7 @@ export const DefaultPlayerOptions: PlayerOptions = {
     deafenOnJoin: false,
     timeout: 0,
     volume: 100,
-    quality: 'high',
+    quality: "high"
 };
 
 /**
@@ -107,7 +107,7 @@ export const DefaultPlayerOptions: PlayerOptions = {
  * @param {boolean} [timecode=false] If url with timecode (?t=) provided, will play from that moment
  */
 export const DefaultPlayOptions: PlayOptions = {
-    sortBy: 'relevance',
+    sortBy: "relevance",
     timecode: false
 };
 
@@ -119,7 +119,7 @@ export const DefaultPlayOptions: PlayOptions = {
  */
 export const DefaultPlaylistOptions: PlaylistOptions = {
     maxSongs: -1,
-    shuffle: false,
+    shuffle: false
 };
 
 /**
@@ -133,9 +133,9 @@ export const DefaultPlaylistOptions: PlaylistOptions = {
 export const DefaultProgressBarOptions: ProgressBarOptions = {
     time: true,
     size: 20,
-    block: '=',
-    arrow: '>'
-}
+    block: "=",
+    arrow: ">"
+};
 
 /**
  * Raw Song object
@@ -148,13 +148,14 @@ export const DefaultProgressBarOptions: ProgressBarOptions = {
  * @property {boolean} isLive
  */
 export interface RawSong {
-    name: string,
-    author: string,
-    url: string,
-    thumbnail: string,
-    duration: string,
-    isLive: boolean
+    name: string;
+    author: string;
+    url: string;
+    thumbnail: string;
+    duration: string;
+    isLive: boolean;
     seekTime?: number;
+    data?: any;
 }
 
 /**
@@ -167,11 +168,11 @@ export interface RawSong {
  * @property {string} type
  */
 export interface RawPlaylist {
-    name: string,
-    author: string,
-    url: string,
-    songs: Song[],
-    type: 'playlist'|'album'
+    name: string;
+    author: string;
+    url: string;
+    songs: Song[];
+    type: "playlist" | "album";
 }
 
 /**
@@ -185,7 +186,7 @@ export interface RawPlaylist {
 export enum RepeatMode {
     DISABLED,
     SONG,
-    QUEUE ,
+    QUEUE
 }
 
 /**
@@ -292,8 +293,8 @@ export interface StreamConnectionEvents {
 }
 
 export interface RawApplePlaylist {
-    name: string
-    type: 'playlist'|'album'
-    author: string
-    tracks: { artist: string, title: string }[]
+    name: string;
+    type: "playlist" | "album";
+    author: string;
+    tracks: { artist: string; title: string }[];
 }
