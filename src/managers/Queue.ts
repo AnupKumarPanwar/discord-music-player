@@ -230,6 +230,20 @@ export class Queue {
                 });
         }
         else{ 
+
+        // const songInfo  =  await ytdl.getBasicInfo(song.url,{
+        //     requestOptions:  { 
+        //     opusEncoded: false,
+        //     seek: options.seek ? options.seek / 1000 : 0,
+        //     fmt: 's16le',
+        //     encoderArgs: [],
+        //     quality: quality!.toLowerCase() === 'low' ? 'lowestaudio' : 'highestaudio',
+        //     highWaterMark: 1 << 25,
+        //     filter: 'audioonly'
+        //     }}); 
+        //     console.log("songInfo::::quality  ", songInfo.formats[0].quality );
+        //     console.log("songInfo::::qualityLabel ", songInfo.formats[0].qualityLabel );
+
         let stream  = ytdl(song.url, {
                 requestOptions: this.player.options.ytdlRequestOptions ?? {},
                 opusEncoded: false,
