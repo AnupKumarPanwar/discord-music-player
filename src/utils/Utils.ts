@@ -185,9 +185,9 @@ export class Utils {
         let YouTubeLink = this.regexList.YouTubeVideo.test(Search);
         let AppleLink = this.regexList.Apple.test(Search);
 
-        console.log("SpotifyLink", SpotifyLink);
-        console.log("YouTubeLink", YouTubeLink);
-        console.log("AppleLink", AppleLink);
+        // console.log("SpotifyLink", SpotifyLink);
+        // console.log("YouTubeLink", YouTubeLink);
+        // console.log("AppleLink", AppleLink);
 
         if (AppleLink) {
             try {
@@ -223,7 +223,10 @@ export class Utils {
                     localAddress: SOptions.localAddress
                 }
             });
+            // console.log("VideoID: ", VideoID);
             let VideoResult = (await YouTube.getVideo(VideoID)) as IVideo;
+            console.log("VideoID: ", VideoID);
+            // console.log("VideoResult: ", VideoResult);
             if (!VideoResult) throw DMPErrors.SEARCH_NULL;
             let VideoTimecode = this.parseVideoTimecode(Search);
 
