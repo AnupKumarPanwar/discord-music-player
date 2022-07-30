@@ -54,7 +54,7 @@ export class Utils {
             /^https?:\/\/(www\.|m\.)?soundcloud\.com\/[a-z0-9](?!.*?(-|_){2})[\w-]{1,23}[a-z0-9](?:\/.+)?$/
     };
 
-    static audioTypes = [".mp3", ".wav", ".mp4", ".webm", ".mov"];
+    static audioTypes = [".mp3", ".wav", ".mp4", ".webm", ".mov", ".m4a"];
     /**
      * Get ID from YouTube link
      * @param {string} url
